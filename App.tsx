@@ -4,11 +4,8 @@ import { observer } from 'mobx-react'
 import {
   Appearance,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
-  View,
 } from 'react-native'
 import BlackJack from './app/components/black-jack.tsx'
 

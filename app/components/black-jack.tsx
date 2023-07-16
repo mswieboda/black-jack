@@ -4,9 +4,6 @@ import { observer } from 'mobx-react'
 import {
   Appearance,
   Button,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
