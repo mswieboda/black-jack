@@ -7,6 +7,7 @@ const INITIAL_DIMENSION_FACTOR = 33
 
 interface Props {
   scale?: number
+  card: Card
 }
 
 @observer
@@ -30,7 +31,7 @@ export default class Card extends Component {
   render() {
     return (
       <View style={this.styles.container}>
-        <Text style={this.styles.text}>J♠️</Text>
+        <Text style={this.styles.text}>{this.props.card.name}</Text>
       </View>
     )
   }

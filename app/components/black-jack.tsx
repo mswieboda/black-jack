@@ -1,8 +1,12 @@
 import React, { Component } from 'react'
-import { computed, makeObservable } from 'mobx'
+import { action, computed, makeObservable, observable } from 'mobx'
 import { observer } from 'mobx-react'
-import { Appearance, Button, StyleSheet, Text, View } from 'react-native'
+import { Appearance, Button, InteractionManager, StyleSheet, Text, View } from 'react-native'
+import _ from 'lodash'
 import Card from './card'
+import { Deck } from 'lib/deck'
+
+const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 
 @observer
 export default class BlackJack extends Component {
@@ -11,22 +15,39 @@ export default class BlackJack extends Component {
     makeObservable(this)
   }
 
-  @computed
-  get isDarkMode() {
-    return Appearance.getColorScheme() === 'dark'
+  @observable
+  deck: Deck = null
+
+  componentDidMount() {
+    InteractionManager.runAfterInteractions(this.afterInteractionSetup)
   }
 
-  onPressDeal = () => console.log('>>> onPressDeal')
+  @action.bound
+  afterInteractionSetup = () => {
+    console.log('>>> afterInteractionSetup')
+    this.deck = Deck.newShoot(8)
+    this.deck.shuffle()
+  }
+
+  @action.bound
+  onPressShuffle = () => {
+    console.log('>>> onPressShuffle')
+    this.deck.shuffle()
+  }
 
   render() {
+    if (_.isNil(this.deck)) {
+      return null
+    }
+
     return (
       <View style={this.styles.container}>
         <Text>hello blackjack</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-          <Card />
-          <Card />
+          <Card card={this.deck.cards[0]} />
+          <Card card={this.deck.cards[1]} />
         </View>
-        <Button onPress={this.onPressDeal} title="Deal" />
+        <Button onPress={this.onPressShuffle} title="Shuffle" />
       </View>
     )
   }
@@ -36,7 +57,7 @@ export default class BlackJack extends Component {
     return StyleSheet.create({
       container: {
         flex: 1,
-        backgroundColor: this.isDarkMode ? '#131313' : '#f0f0f0',
+        backgroundColor: isDarkMode ? '#131313' : '#f0f0f0',
       },
     })
   }
