@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { Appearance, Button, StyleSheet, Text, View } from 'react-native'
+import Card from './card'
 
 @observer
 export default class BlackJack extends Component {
@@ -21,6 +22,10 @@ export default class BlackJack extends Component {
     return (
       <View style={this.styles.container}>
         <Text>hello blackjack</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
+          <Card />
+          <Card />
+        </View>
         <Button onPress={this.onPressDeal} title="Deal" />
       </View>
     )
