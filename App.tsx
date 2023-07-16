@@ -1,12 +1,7 @@
 import React, { Component } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
-import {
-  Appearance,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-} from 'react-native'
+import { Appearance, SafeAreaView, StatusBar, StyleSheet } from 'react-native'
 import BlackJack from './app/components/black-jack.tsx'
 
 @observer
@@ -37,11 +32,11 @@ export default class App extends Component {
   get styles() {
     return StyleSheet.create({
       safeArea: {
-        flex: 1
+        flex: 1,
       },
       background: {
         backgroundColor: this.isDarkMode ? '#131313' : '#f0f0f0',
-      }
+      },
     })
   }
 }

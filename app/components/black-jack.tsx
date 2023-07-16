@@ -1,13 +1,7 @@
 import React, { Component } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
-import {
-  Appearance,
-  Button,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Appearance, Button, StyleSheet, Text, View } from 'react-native'
 
 @observer
 export default class BlackJack extends Component {
@@ -27,10 +21,7 @@ export default class BlackJack extends Component {
     return (
       <View style={this.styles.container}>
         <Text>hello blackjack</Text>
-        <Button
-          onPress={this.onPressDeal}
-          title="Deal"
-        />
+        <Button onPress={this.onPressDeal} title="Deal" />
       </View>
     )
   }
@@ -41,7 +32,7 @@ export default class BlackJack extends Component {
       container: {
         flex: 1,
         backgroundColor: this.isDarkMode ? '#131313' : '#f0f0f0',
-      }
+      },
     })
   }
 }
