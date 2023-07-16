@@ -33,8 +33,18 @@ export class Card {
   }
 
   @computed
+  get rankName() {
+    if (this.rank == 1 || this.rank > 10) {
+      const rank = Object.entries(Rank).find(([key, value]) => value === this.rank)
+      return rank?.[0]?.[0]
+    }
+
+    return this.rank
+  }
+
+  @computed
   get name() {
-    return `${this.rank}${this.suit}`
+    return `${this.rankName}${this.suit}`
   }
 
   static standardCards = () => {
@@ -55,7 +65,7 @@ export class Card {
   }
 }
 
-export class Deck {
+export class Shoot {
   constructor() {
     makeObservable(this)
   }
@@ -63,27 +73,24 @@ export class Deck {
   @observable
   cards: Card[] = []
 
-  static newStandardDeck = () => {
-    const deck = new Deck()
-
-    deck.cards = Card.standardCards()
-
-    return deck
-  }
-
-  static newShoot = (decks: number) => {
-    const deck = new Deck()
-
-    _.times(decks, () => {
-      deck.cards = deck.cards.concat(Card.standardCards())
-    })
-
-    return deck
+  @action.bound
+  addDecks = (decks: number) => {
+    this.cards = _.flatten(_.times(decks, () => Card.standardCards()))
   }
 
   @action.bound
   shuffle = () => {
     this.cards = _.shuffle(this.cards)
     return this.cards
+  }
+
+  @action.bound
+  add = (cards: Card[]) => {
+    this.cards = this.cards.concat(cards)
+  }
+
+  @action.bound
+  remove = (amount: number = 1) => {
+    return this.cards.splice(-amount, amount)
   }
 }
