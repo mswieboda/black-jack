@@ -3,7 +3,7 @@ import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
 
-const INITIAL_DIMENSION_FACTOR = 33
+const INITIAL_DIMENSION_FACTOR = 25
 
 interface Props {
   scale?: number
@@ -11,14 +11,14 @@ interface Props {
 }
 
 @observer
-export default class Card extends Component {
+export default class Card extends Component<Props> {
   constructor(props) {
     super(props)
     makeObservable(this)
   }
 
   static defaultProps = {
-    scale: 1
+    scale: 1,
   }
 
   @computed
@@ -31,7 +31,10 @@ export default class Card extends Component {
   render() {
     return (
       <View style={this.styles.container}>
-        <Text style={this.styles.text}>{this.props.card.name}</Text>
+        <View style={this.styles.cornerLabel}>
+          <Text style={this.styles.text}>{this.props.card.rankName}</Text>
+          <Text style={this.styles.text}>{this.props.card.suit}</Text>
+        </View>
       </View>
     )
   }
@@ -42,17 +45,20 @@ export default class Card extends Component {
       container: {
         height: 3.5 * this.dimensions_factor,
         width: 2.25 * this.dimensions_factor,
-        justifyContent: 'center',
-        alignItems: 'center',
         borderRadius: 8 * this.props.scale,
         borderWidth: 1,
         margin: 4 * this.props.scale,
+        padding: 4 * this.props.scale,
         borderColor: '#333',
         backgroundColor: '#000',
       },
+      cornerLabel: {
+        width: 14 * this.props.scale,
+      },
       text: {
-        fontSize: 16 * this.props.scale
-      }
+        fontSize: 10 * this.props.scale,
+        textAlign: 'center',
+      },
     })
   }
 }

@@ -27,15 +27,17 @@ const Suit = {
 export class Card {
   constructor(
     private readonly suit: string,
-    private readonly rank: number
+    private readonly rank: number,
+    private readonly deckIndex: number,
   ) {
     makeObservable(this)
   }
 
   @computed
   get rankName() {
-    if (this.rank == 1 || this.rank > 10) {
-      const rank = Object.entries(Rank).find(([key, value]) => value === this.rank)
+    if (this.rank === 1 || this.rank > 10) {
+      const ranks = Object.entries(Rank)
+      const rank = ranks.find(([_key, value]) => value === this.rank)
       return rank?.[0]?.[0]
     }
 
@@ -47,7 +49,12 @@ export class Card {
     return `${this.rankName}${this.suit}`
   }
 
-  static standardCards = () => {
+  @computed
+  get key() {
+    return `${this.name}-${this.deckIndex}`
+  }
+
+  static standardCards = (deckIndex: number = 0) => {
     const cards = []
 
     for (const suit_key of Object.keys(Suit)) {
@@ -55,7 +62,7 @@ export class Card {
 
       for (const rank_key of Object.keys(Rank)) {
         const rank = Rank[rank_key]
-        const card = new Card(suit, rank)
+        const card = new Card(suit, rank, deckIndex)
 
         cards.push(card)
       }
@@ -75,7 +82,9 @@ export class Shoot {
 
   @action.bound
   addDecks = (decks: number) => {
-    this.cards = _.flatten(_.times(decks, () => Card.standardCards()))
+    this.cards = _.flatten(
+      _.times(decks, deckIndex => Card.standardCards(deckIndex)),
+    )
   }
 
   @action.bound

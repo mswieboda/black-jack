@@ -15,13 +15,13 @@ module.exports = {
           '.tsx',
           '.jsx',
           '.js',
-          '.json'
+          '.json',
         ],
         alias: {
-          'lib': './app/lib',
-          'components': './app/components',
-        }
-      }
+          lib: './app/lib',
+          components: './app/components',
+        },
+      },
     ],
   ],
 }
