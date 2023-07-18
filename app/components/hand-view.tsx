@@ -4,10 +4,12 @@ import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
 import _ from 'lodash'
 import { Hand } from 'lib/cards'
-import CardView from './card-view'
+import CardView, { EmptyCardView } from './card-view'
 
 interface Props {
   label: string
+  isDealer?: boolean
+  isDealerTurn?: boolean
   hand: Hand
 }
 
@@ -20,14 +22,17 @@ export default class HandView extends Component<Props> {
 
   @computed
   get label() {
-    return `${this.props.label}: ${this.props.hand.display}`
+    const showHand = !this.props.isDealer || this.props.isDealerTurn
+    return `${this.props.label}: ${showHand ? this.props.hand.display : '???'}`
   }
 
   render() {
     return (
       <View>
         <Text style={this.styles.label}>{this.label}</Text>
-        {!_.isEmpty(this.props.hand.cards) && (
+        {_.isEmpty(this.props.hand.cards) ? (
+          <EmptyCardView scale={1.5} />
+        ) : (
           <View style={this.styles.cards}>
             {this.props.hand.cards.map((card, index) => (
               <CardView
@@ -35,6 +40,7 @@ export default class HandView extends Component<Props> {
                 key={card.key}
                 scale={1.5}
                 layeredIndex={index}
+                flipped={this.props.isDealer && index == 1 && !this.props.isDealerTurn}
               />
             ))}
           </View>

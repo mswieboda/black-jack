@@ -139,7 +139,7 @@ export class Hand {
 
       if (option === TWENTY_ONE_VALUE) {
         return TWENTY_ONE_VALUE
-      } else if (option < TWENTY_ONE_VALUE - ACE_MAX_VALUE) {
+      } else if (option < TWENTY_ONE_VALUE) {
         aceOption = option
       }
     }
@@ -171,8 +171,13 @@ export class Hand {
   }
 
   @computed
+  get isDealt() {
+    return this.cards.length === 2
+  }
+
+  @computed
   get canSplit() {
-    if (this.cards.length !== 2) {
+    if (!this.isDealt) {
       return false
     }
 

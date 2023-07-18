@@ -14,7 +14,7 @@ import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 const INITIAL_TOTAL = 150
-const TESTING = false
+const TESTING = true // false
 
 @observer
 export default class BlackJack extends Component {
@@ -41,6 +41,9 @@ export default class BlackJack extends Component {
   @observable
   bet: number | null = null
 
+  @observable
+  turnIndex = 0
+
   componentDidMount() {
     InteractionManager.runAfterInteractions(this.afterInteractionSetup)
   }
@@ -65,8 +68,14 @@ export default class BlackJack extends Component {
   }
 
   @action.bound
+  hit = () => {
+    this.hands[this.turnIndex].add(this.shoot.remove())
+  }
+
+  @action.bound
   onPressHit = () => {
-    this.playerHand.add(this.shoot.remove())
+    // this.playerHand.add(this.shoot.remove())
+    this.playerHand.add([new Card('s', 2, 0), new Card('h', 1, 0)])
     this.dealerHand.add(this.shoot.remove())
   }
 
@@ -82,20 +91,51 @@ export default class BlackJack extends Component {
     this.bet = null
   }
 
+  @action.bound
+  startDeal = () => {
+    this.turnIndex = 0
+    setTimeout(() => this.deal(this.turnIndex), 500)
+  }
+
+  @action.bound
+  nextTurnIndex = () => {
+    const index = this.turnIndex + 1
+
+    this.turnIndex = index > this.hands.length - 1 ? 0 : index
+  }
+
+  @action.bound
+  deal = (turnIndex) => {
+    this.hit()
+    this.nextTurnIndex()
+
+    const hand = this.hands[this.turnIndex]
+
+    if (!hand.isDealt && turnIndex <= this.hands.length - 1) {
+      setTimeout(() => this.deal(this.turnIndex), 500)
+    }
+  }
+
   render() {
     return (
       <View style={this.styles.container}>
-        <View style={this.styles.section}>
-          <HandView label="dealer" hand={this.dealerHand} />
-        </View>
+        <HandView
+          label="dealer"
+          hand={this.dealerHand}
+          isDealer={true}
+          isDealerTurn={false} // TODO: impl
+        />
         <View style={this.styles.bottomView}>
-          <View style={this.styles.section}>
-            <HandView label="player" hand={this.playerHand} />
-          </View>
+          <HandView label="player" hand={this.playerHand} />
           <View style={this.styles.section}>
             {!_.isNil(this.bet) && <Bet bet={this.bet} />}
           </View>
-          <Actions hand={this.playerHand} onClearBet={this.onClearBet} />
+          <Actions
+            bet={this.bet}
+            hand={this.playerHand}
+            onClearBet={this.onClearBet}
+            onConfirmBet={this.startDeal}
+          />
           <View style={this.styles.section}>
             <Chips
               canBet={!this.playerHand.hasCards}
@@ -137,8 +177,10 @@ export default class BlackJack extends Component {
 }
 
 interface ActionsProps {
+  bet?: number
   hand: Hand
   onClearBet: () => void
+  onConfirmBet: () => void
 }
 
 @observer
@@ -148,12 +190,17 @@ class Actions extends Component<ActionsProps> {
     makeObservable(this)
   }
 
+  @computed
+  get bettingDisabled() {
+    return _.isNil(this.props.bet)
+  }
+
   renderPreBet() {
     return (
       <>
-        <Button onPress={this.props.onClearBet} title="Clear" />
+        <Button onPress={this.props.onClearBet} title="Clear" disabled={this.bettingDisabled} />
         <View style={this.styles.separator} />
-        <Button onPress={_.noop} title="Bet" />
+        <Button onPress={this.props.onConfirmBet} title="Bet" disabled={this.bettingDisabled} />
       </>
     )
   }
@@ -228,7 +275,7 @@ class Chips extends Component<ChipsProps> {
     return (
       <View style={this.styles.chipsRow}>
         {CHIP_DENOMINATIONS.map((chip, index) => {
-          const useSeparator = index < CHIP_DENOMINATIONS.length + 1
+          const useSeparator = index < CHIP_DENOMINATIONS.length - 1
           const disabled = !this.canBet(chip)
 
           // TODO: search how to add key to blank <></> React component

@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, ReactNode } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
@@ -11,10 +11,65 @@ interface Props {
   scale?: number
   card: Card
   layeredIndex?: number
+  flipped?: boolean
 }
 
 @observer
 export default class CardView extends Component<Props> {
+  constructor(props) {
+    super(props)
+    makeObservable(this)
+  }
+
+  static defaultProps = {
+    scale: 1,
+  }
+
+  render() {
+    return (
+      <CardContainer scale={this.props.scale} layeredIndex={this.props.layeredIndex}>
+        {!this.props.flipped && (
+          <>
+            <Text style={this.styles.text}>{this.props.card.rankName}</Text>
+            <Text style={this.styles.text}>{this.props.card.suit}</Text>
+          </>
+        )}
+      </CardContainer>
+    )
+  }
+
+  @computed
+  get styles() {
+    return StyleSheet.create({
+      text: {
+        fontSize: 10 * this.props.scale,
+        textAlign: 'center',
+      },
+    })
+  }
+}
+
+interface EmptyCardViewProps {
+  scale: number
+}
+
+export class EmptyCardView extends Component<EmptyCardViewProps> {
+  render() {
+    return (
+      <CardContainer scale={this.props.scale} hidden={true} />
+    )
+  }
+}
+
+interface CardContainerProps {
+  scale?: number
+  layeredIndex?: number
+  children?: ReactNode
+  hidden?: boolean
+}
+
+@observer
+class CardContainer extends Component<CardContainerProps> {
   constructor(props) {
     super(props)
     makeObservable(this)
@@ -42,8 +97,7 @@ export default class CardView extends Component<Props> {
     return (
       <View style={this.styles.container}>
         <View style={this.styles.cornerLabel}>
-          <Text style={this.styles.text}>{this.props.card.rankName}</Text>
-          <Text style={this.styles.text}>{this.props.card.suit}</Text>
+          {this.props.children}
         </View>
       </View>
     )
@@ -53,24 +107,20 @@ export default class CardView extends Component<Props> {
   get styles() {
     return StyleSheet.create({
       container: {
-        position: _.isNil(this.props.layeredIndex) ? 'absolute' : 'relative',
         left: this.positionLeft,
-        height: 3.5 * this.dimensionsFactor,
         width: 2.25 * this.dimensionsFactor,
-        borderRadius: 8 * this.props.scale,
-        borderWidth: 1,
+        height: 3.5 * this.dimensionsFactor,
+        borderRadius: this.props.hidden ? null : 8 * this.props.scale,
+        borderWidth: this.props.hidden ? null : 1,
         margin: 4 * this.props.scale,
         padding: 4 * this.props.scale,
-        borderColor: '#333',
-        backgroundColor: '#000',
+        borderColor: this.props.hidden ? null : '#333',
+        backgroundColor: this.props.hidden ? null : '#000',
       },
       cornerLabel: {
         width: 14 * this.props.scale,
-      },
-      text: {
-        fontSize: 10 * this.props.scale,
-        textAlign: 'center',
-      },
+      }
     })
   }
 }
+
