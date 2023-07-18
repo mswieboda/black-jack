@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "clean": "npx react-native-clean-project",
+    "clean-all": "npx react-native clean-project-auto",
     "ios": "react-native run-ios",
     "lint": "eslint .",
+    "release:android": "cd android && ./gradlew assembleRelease && cd - && echo 'APK generated in ./android/app/build/outputs/apk/release/app-release.apk'",
     "start": "react-native start",
     "test": "jest"
   },
