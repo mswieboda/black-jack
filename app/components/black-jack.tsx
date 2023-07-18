@@ -1,7 +1,13 @@
 import React, { Component } from 'react'
 import { action, computed, makeObservable, observable } from 'mobx'
 import { observer } from 'mobx-react'
-import { Button, InteractionManager, StyleSheet, Text, View } from 'react-native'
+import {
+  Button,
+  InteractionManager,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import _ from 'lodash'
 import { Hand, Shoot } from 'lib/cards'
 import HandView from './hand-view'
@@ -71,7 +77,7 @@ export default class BlackJack extends Component {
           <View style={this.styles.section}>
             <Chips canBet={!this.playerHand.hasCards} total={300} />
           </View>
-          <View style={{flexDirection: 'row'}}>
+          <View style={this.styles.testRow}>
             <Button onPress={this.onPressHit} title="Hit" />
             <Button onPress={this.onPressHit} title="Reset" />
           </View>
@@ -93,6 +99,9 @@ export default class BlackJack extends Component {
       bottomView: {
         flex: 2,
         justifyContent: 'flex-end',
+      },
+      testRow: {
+        flexDirection: 'row',
       },
     })
   }
@@ -199,9 +208,7 @@ class Chips extends Component<ChipsProps> {
   renderTotals() {
     return (
       <View style={this.styles.total}>
-        <Text style={this.styles.totalLabel}>
-          Total: ${this.props.total}
-        </Text>
+        <Text style={this.styles.totalLabel}>Total: ${this.props.total}</Text>
       </View>
     )
   }
@@ -227,15 +234,15 @@ class Chips extends Component<ChipsProps> {
         marginTop: 32,
       },
       separator: {
-        width: 8
+        width: 8,
       },
       total: {
         flex: 1,
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
       },
       totalLabel: {
-        fontSize: 16
-      }
+        fontSize: 16,
+      },
     })
   }
 }
