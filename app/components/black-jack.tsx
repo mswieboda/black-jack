@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { action, computed, makeObservable, observable } from 'mobx'
 import { observer } from 'mobx-react'
-import { Button, InteractionManager, StyleSheet, View } from 'react-native'
+import { Button, InteractionManager, StyleSheet, Text, View } from 'react-native'
 import _ from 'lodash'
 import { Hand, Shoot } from 'lib/cards'
 import HandView from './hand-view'
@@ -68,8 +68,13 @@ export default class BlackJack extends Component {
           </View>
           <View style={this.styles.section}>{/* Bet */}</View>
           <Actions hand={this.playerHand} />
-          <View style={this.styles.section}>{/* Chips */}</View>
-          <Button onPress={this.onPressHit} title="Hit" />
+          <View style={this.styles.section}>
+            <Chips canBet={!this.playerHand.hasCards} total={300} />
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <Button onPress={this.onPressHit} title="Hit" />
+            <Button onPress={this.onPressHit} title="Reset" />
+          </View>
         </View>
       </View>
     )
@@ -155,6 +160,82 @@ class Actions extends Component<ActionsProps> {
       separator: {
         width: 16,
       },
+    })
+  }
+}
+
+interface ChipsProps {
+  canBet?: boolean
+  total: number
+}
+
+const CHIP_DENOMINATIONS = [5, 10, 25, 50, 100, 250, 500]
+
+@observer
+class Chips extends Component<ChipsProps> {
+  constructor(props) {
+    super(props)
+    makeObservable(this)
+  }
+
+  renderChips() {
+    return (
+      <View style={this.styles.chipsRow}>
+        {CHIP_DENOMINATIONS.map((chip, index) => {
+          const useSeparator = index < CHIP_DENOMINATIONS.length + 1
+
+          // TODO: search how to add key to blank <></> React component
+          return (
+            <>
+              <Button onPress={_.noop} title={`${chip}`} />
+              {useSeparator && <View style={this.styles.separator} />}
+            </>
+          )
+        })}
+      </View>
+    )
+  }
+
+  renderTotals() {
+    return (
+      <View style={this.styles.total}>
+        <Text style={this.styles.totalLabel}>
+          Total: ${this.props.total}
+        </Text>
+      </View>
+    )
+  }
+
+  render() {
+    return (
+      <View style={this.styles.container}>
+        {this.props.canBet && this.renderChips()}
+        {this.renderTotals()}
+      </View>
+    )
+  }
+
+  @computed
+  get styles() {
+    return StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      chipsRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 32,
+      },
+      separator: {
+        width: 8
+      },
+      total: {
+        flex: 1,
+        justifyContent: 'flex-end'
+      },
+      totalLabel: {
+        fontSize: 16
+      }
     })
   }
 }
