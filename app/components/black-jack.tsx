@@ -41,7 +41,6 @@ export default class BlackJack extends Component {
   afterInteractionSetup = () => {
     this.shoot.addDecks(8)
     this.shoot.shuffle()
-    this.deal()
   }
 
   @computed
@@ -72,14 +71,23 @@ export default class BlackJack extends Component {
     this.deal()
   }
 
+  @action.bound
+  onPressHit = () => {
+    this.playerHand = this.playerHand.concat(this.shoot.remove())
+    this.dealerHand = this.dealerHand.concat(this.shoot.remove())
+  }
+
   render() {
     return (
       <View style={this.styles.container}>
         <Hand label="dealer" cards={this.dealerHand} />
+        <View style={this.styles.section} />
         <Hand label="player" cards={this.playerHand} />
         <View style={this.styles.section}>{/*<Text>Bet</Text>*/}</View>
         <View style={this.styles.actions}>
           <Button onPress={this.onPressDeal} title="Deal" />
+          <View style={this.styles.separator} />
+          <Button onPress={this.onPressHit} title="Hit" />
         </View>
         <View style={this.styles.section}>{/*<Text>Chips</Text>*/}</View>
       </View>
@@ -119,17 +127,20 @@ interface HandProps {
 class Hand extends Component<HandProps> {
   render() {
     return (
-      <View>
+      <View style={this.styles.container}>
         <Text style={this.styles.label}>{this.props.label}</Text>
-        <View style={this.styles.cards}>
-          {_.isEmpty(this.props.cards) ? (
-            <Text>no cards</Text>
-          ) : (
-            this.props.cards.map(card => (
-              <Card key={card.key} card={card} scale={1.5} />
-            ))
-          )}
-        </View>
+        {!_.isEmpty(this.props.cards) && (
+          <View style={this.styles.cards}>
+            {this.props.cards.map((card, index) => (
+              <Card
+                card={card}
+                key={card.key}
+                scale={1.5}
+                layeredIndex={index}
+              />
+            ))}
+          </View>
+        )}
       </View>
     )
   }
@@ -137,13 +148,14 @@ class Hand extends Component<HandProps> {
   @computed
   get styles() {
     return StyleSheet.create({
+      container: {
+        flex: 1,
+      },
       label: {
         fontSize: 16,
       },
       cards: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
       },
     })
   }

@@ -2,12 +2,14 @@ import React, { Component } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
+import _ from 'lodash'
 
 const INITIAL_DIMENSION_FACTOR = 25
 
 interface Props {
   scale?: number
   card: Card
+  layeredIndex?: number
 }
 
 @observer
@@ -22,11 +24,18 @@ export default class Card extends Component<Props> {
   }
 
   @computed
-  get dimensions_factor() {
+  get dimensionsFactor() {
     return this.props.scale * INITIAL_DIMENSION_FACTOR
   }
 
-  onPressDeal = () => console.log('>>> onPressDeal')
+  @computed
+  get positionLeft() {
+    if (_.isNil(this.props.layeredIndex)) {
+      return 0
+    }
+
+    return -this.props.layeredIndex * this.dimensionsFactor * 1.69
+  }
 
   render() {
     return (
@@ -43,8 +52,10 @@ export default class Card extends Component<Props> {
   get styles() {
     return StyleSheet.create({
       container: {
-        height: 3.5 * this.dimensions_factor,
-        width: 2.25 * this.dimensions_factor,
+        position: _.isNil(this.props.layeredIndex) ? 'absolute' : 'relative',
+        left: this.positionLeft,
+        height: 3.5 * this.dimensionsFactor,
+        width: 2.25 * this.dimensionsFactor,
         borderRadius: 8 * this.props.scale,
         borderWidth: 1,
         margin: 4 * this.props.scale,
