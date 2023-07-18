@@ -1,16 +1,10 @@
 import React, { Component } from 'react'
 import { action, computed, makeObservable, observable } from 'mobx'
 import { observer } from 'mobx-react'
-import {
-  Button,
-  InteractionManager,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Button, InteractionManager, StyleSheet, View } from 'react-native'
 import _ from 'lodash'
-import Card from './card'
-import { Shoot } from 'lib/cards'
+import { Card, Shoot } from 'lib/cards'
+import Hand from './hand'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 
@@ -83,13 +77,13 @@ export default class BlackJack extends Component {
         <Hand label="dealer" cards={this.dealerHand} />
         <View style={this.styles.section} />
         <Hand label="player" cards={this.playerHand} />
-        <View style={this.styles.section}>{/*<Text>Bet</Text>*/}</View>
+        <View style={this.styles.section}>{/* Bet */}</View>
         <View style={this.styles.actions}>
           <Button onPress={this.onPressDeal} title="Deal" />
           <View style={this.styles.separator} />
           <Button onPress={this.onPressHit} title="Hit" />
         </View>
-        <View style={this.styles.section}>{/*<Text>Chips</Text>*/}</View>
+        <View style={this.styles.section}>{/* Chips */}</View>
       </View>
     )
   }
@@ -113,49 +107,6 @@ export default class BlackJack extends Component {
         flex: 1,
         alignItems: 'center',
         marginTop: 32,
-      },
-    })
-  }
-}
-
-interface HandProps {
-  label: string
-  cards: Card[]
-}
-
-@observer
-class Hand extends Component<HandProps> {
-  render() {
-    return (
-      <View style={this.styles.container}>
-        <Text style={this.styles.label}>{this.props.label}</Text>
-        {!_.isEmpty(this.props.cards) && (
-          <View style={this.styles.cards}>
-            {this.props.cards.map((card, index) => (
-              <Card
-                card={card}
-                key={card.key}
-                scale={1.5}
-                layeredIndex={index}
-              />
-            ))}
-          </View>
-        )}
-      </View>
-    )
-  }
-
-  @computed
-  get styles() {
-    return StyleSheet.create({
-      container: {
-        flex: 1,
-      },
-      label: {
-        fontSize: 16,
-      },
-      cards: {
-        flexDirection: 'row',
       },
     })
   }

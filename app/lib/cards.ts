@@ -1,6 +1,9 @@
 import { action, computed, makeObservable, observable } from 'mobx'
 import _ from 'lodash'
 
+const ACE_MAX_VALUE = 11
+const FACE_VALUE = 10
+const TWENTY_ONE_VALUE = 21
 const Rank = {
   Ace: 1,
   Two: 2,
@@ -102,4 +105,28 @@ export class Shoot {
   remove = (amount: number = 1) => {
     return this.cards.splice(-amount, amount)
   }
+}
+
+export const handValue = (cards: Card[]): number | [number, number] => {
+  let ace = null
+  let aceOption = null
+  let value = 0
+
+  for (const card of cards) {
+    if (_.isNil(ace) && card.rank === Rank.Ace) {
+      ace = card
+    }
+
+    if (card.rank <= 10) {
+      value += card.rank
+    } else {
+      value += FACE_VALUE
+    }
+  }
+
+  if (!_.isNil(ace) && value + ACE_MAX_VALUE <= TWENTY_ONE_VALUE) {
+    aceOption = value + ACE_MAX_VALUE - ace.rank
+  }
+
+  return _.isNil(aceOption) ? value : [value, aceOption]
 }

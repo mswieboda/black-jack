@@ -3,6 +3,7 @@ import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
 import _ from 'lodash'
+import { Card } from 'lib/cards'
 
 const INITIAL_DIMENSION_FACTOR = 25
 
@@ -13,7 +14,7 @@ interface Props {
 }
 
 @observer
-export default class Card extends Component<Props> {
+export default class CardView extends Component<Props> {
   constructor(props) {
     super(props)
     makeObservable(this)
