@@ -40,7 +40,9 @@ export default class HandView extends Component<Props> {
                 key={card.key}
                 scale={1.5}
                 layeredIndex={index}
-                flipped={this.props.isDealer && index == 1 && !this.props.isDealerTurn}
+                flipped={
+                  this.props.isDealer && index === 1 && !this.props.isDealerTurn
+                }
               />
             ))}
           </View>

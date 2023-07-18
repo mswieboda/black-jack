@@ -27,7 +27,9 @@ export default class CardView extends Component<Props> {
 
   render() {
     return (
-      <CardContainer scale={this.props.scale} layeredIndex={this.props.layeredIndex}>
+      <CardContainer
+        scale={this.props.scale}
+        layeredIndex={this.props.layeredIndex}>
         {!this.props.flipped && (
           <>
             <Text style={this.styles.text}>{this.props.card.rankName}</Text>
@@ -55,9 +57,7 @@ interface EmptyCardViewProps {
 
 export class EmptyCardView extends Component<EmptyCardViewProps> {
   render() {
-    return (
-      <CardContainer scale={this.props.scale} hidden={true} />
-    )
+    return <CardContainer scale={this.props.scale} hidden={true} />
   }
 }
 
@@ -96,9 +96,7 @@ class CardContainer extends Component<CardContainerProps> {
   render() {
     return (
       <View style={this.styles.container}>
-        <View style={this.styles.cornerLabel}>
-          {this.props.children}
-        </View>
+        <View style={this.styles.cornerLabel}>{this.props.children}</View>
       </View>
     )
   }
@@ -119,8 +117,7 @@ class CardContainer extends Component<CardContainerProps> {
       },
       cornerLabel: {
         width: 14 * this.props.scale,
-      }
+      },
     })
   }
 }
-

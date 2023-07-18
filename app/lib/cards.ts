@@ -176,6 +176,11 @@ export class Hand {
   }
 
   @computed
+  get canHit() {
+    return !this.isBust
+  }
+
+  @computed
   get canSplit() {
     if (!this.isDealt) {
       return false
@@ -192,5 +197,10 @@ export class Hand {
   @computed
   get hasCards() {
     return this.cards.length > 0
+  }
+
+  @computed
+  get isBust() {
+    return !_.isArrayLikeObject(this.value) && this.value > TWENTY_ONE_VALUE
   }
 }

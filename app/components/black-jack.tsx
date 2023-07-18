@@ -10,11 +10,15 @@ import {
 } from 'react-native'
 import _ from 'lodash'
 import { Hand, Shoot } from 'lib/cards'
+import { showError, showWarning } from 'lib/message'
 import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 const INITIAL_TOTAL = 150
+const ACTION_DELAY = 300
 const TESTING = false
+
+const delayedAction = (a: () => void) => setTimeout(a, ACTION_DELAY)
 
 @observer
 export default class BlackJack extends Component {
@@ -69,13 +73,18 @@ export default class BlackJack extends Component {
 
   @action.bound
   hit = () => {
-    this.hands[this.turnIndex].add(this.shoot.remove())
+    const hand = this.hands[this.turnIndex]
+
+    hand.add(this.shoot.remove())
+
+    if (hand.isBust) {
+      showError(this.delaerHand === hand ? 'dealer ' : '' + 'bust!')
+    }
   }
 
   @action.bound
-  onPressHit = () => {
-    // this.playerHand.add(this.shoot.remove())
-    this.playerHand.add([new Card('s', 2, 0), new Card('h', 1, 0)])
+  onPressTest = () => {
+    this.playerHand.add(this.shoot.remove())
     this.dealerHand.add(this.shoot.remove())
   }
 
@@ -94,7 +103,7 @@ export default class BlackJack extends Component {
   @action.bound
   startDeal = () => {
     this.turnIndex = 0
-    setTimeout(() => this.deal(this.turnIndex), 500)
+    delayedAction(this.dealAction(0))
   }
 
   @action.bound
@@ -105,15 +114,36 @@ export default class BlackJack extends Component {
   }
 
   @action.bound
-  deal = (turnIndex) => {
+  dealAction = dealIndex => () => {
     this.hit()
     this.nextTurnIndex()
 
     const hand = this.hands[this.turnIndex]
 
-    if (!hand.isDealt && turnIndex <= this.hands.length - 1) {
-      setTimeout(() => this.deal(this.turnIndex), 500)
+    if (!hand.isDealt) {
+      delayedAction(this.dealAction(dealIndex + 1))
     }
+  }
+
+  @action.bound
+  onPressStay = () => {
+    showWarning('stay not yet implemented')
+  }
+
+  @action.bound
+  onPressSplit = () => {
+    showWarning('split not yet implemented')
+  }
+
+  @action.bound
+  onPressDoubleDown = () => {
+    showWarning('double down not yet implemented')
+  }
+
+  @action.bound
+  onPressHit = () => {
+    this.turnIndex = 0
+    delayedAction(this.hit)
   }
 
   render() {
@@ -135,6 +165,10 @@ export default class BlackJack extends Component {
             hand={this.playerHand}
             onClearBet={this.onClearBet}
             onConfirmBet={this.startDeal}
+            onPressStay={this.onPressStay}
+            onPressSplit={this.onPressSplit}
+            onPressDoubleDown={this.onPressDoubleDown}
+            onPressHit={this.onPressHit}
           />
           <View style={this.styles.section}>
             <Chips
@@ -145,7 +179,7 @@ export default class BlackJack extends Component {
           </View>
           {TESTING && (
             <View style={this.styles.testRow}>
-              <Button onPress={this.onPressHit} title="Hit" />
+              <Button onPress={this.onPressTest} title="Test" />
               <Button onPress={this.clearHands} title="Reset" />
             </View>
           )}
@@ -181,6 +215,10 @@ interface ActionsProps {
   hand: Hand
   onClearBet: () => void
   onConfirmBet: () => void
+  onPressStay: () => void
+  onPressSplit: () => void
+  onPressDoubleDown: () => void
+  onPressHit: () => void
 }
 
 @observer
@@ -198,9 +236,17 @@ class Actions extends Component<ActionsProps> {
   renderPreBet() {
     return (
       <>
-        <Button onPress={this.props.onClearBet} title="Clear" disabled={this.bettingDisabled} />
+        <Button
+          onPress={this.props.onClearBet}
+          title="Clear"
+          disabled={this.bettingDisabled}
+        />
         <View style={this.styles.separator} />
-        <Button onPress={this.props.onConfirmBet} title="Bet" disabled={this.bettingDisabled} />
+        <Button
+          onPress={this.props.onConfirmBet}
+          title="Bet"
+          disabled={this.bettingDisabled}
+        />
       </>
     )
   }
@@ -208,21 +254,25 @@ class Actions extends Component<ActionsProps> {
   renderHand() {
     return (
       <>
-        <Button onPress={_.noop} title="Stay" />
+        <Button title="Stay" onPress={this.props.onPressStay} />
         <View style={this.styles.separator} />
-        {this.props.hand.canDoubleDown && (
-          <>
-            <Button onPress={_.noop} title="Double Down" />
-            <View style={this.styles.separator} />
-          </>
-        )}
-        {this.props.hand.canSplit && (
-          <>
-            <Button onPress={_.noop} title="Split" />
-            <View style={this.styles.separator} />
-          </>
-        )}
-        <Button onPress={this.onPressHit} title="Hit" />
+        <Button
+          title="Split"
+          onPress={this.props.onPressSplit}
+          disabled={!this.props.hand.canSplit}
+        />
+        <View style={this.styles.separator} />
+        <Button
+          title="Double Down"
+          onPress={this.props.onPressDoubleDown}
+          disabled={!this.props.hand.canDoubleDown}
+        />
+        <View style={this.styles.separator} />
+        <Button
+          title="Hit"
+          onPress={this.props.onPressHit}
+          disabled={!this.props.hand.canHit}
+        />
       </>
     )
   }

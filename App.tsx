@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native'
+import FlashMessage from 'react-native-flash-message'
 import BlackJack from './app/components/black-jack.tsx'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
@@ -21,6 +22,7 @@ export default class App extends Component {
           backgroundColor={this.styles.background.backgroundColor}
         />
         <BlackJack />
+        <FlashMessage position="top" />
       </SafeAreaView>
     )
   }
