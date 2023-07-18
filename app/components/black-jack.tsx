@@ -13,6 +13,8 @@ import { Hand, Shoot } from 'lib/cards'
 import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
+const INITIAL_TOTAL = 150
+const TESTING = false
 
 @observer
 export default class BlackJack extends Component {
@@ -32,6 +34,12 @@ export default class BlackJack extends Component {
 
   @observable
   dealerHand: Hand = new Hand()
+
+  @observable
+  total: number = INITIAL_TOTAL
+
+  @observable
+  bet: number | null = null
 
   componentDidMount() {
     InteractionManager.runAfterInteractions(this.afterInteractionSetup)
@@ -62,6 +70,18 @@ export default class BlackJack extends Component {
     this.dealerHand.add(this.shoot.remove())
   }
 
+  @action.bound
+  onAddBet = (bet: number) => {
+    this.bet += bet
+    this.total -= bet
+  }
+
+  @action.bound
+  onClearBet = () => {
+    this.total += this.bet
+    this.bet = null
+  }
+
   render() {
     return (
       <View style={this.styles.container}>
@@ -72,15 +92,23 @@ export default class BlackJack extends Component {
           <View style={this.styles.section}>
             <HandView label="player" hand={this.playerHand} />
           </View>
-          <View style={this.styles.section}>{/* Bet */}</View>
-          <Actions hand={this.playerHand} />
           <View style={this.styles.section}>
-            <Chips canBet={!this.playerHand.hasCards} total={300} />
+            {!_.isNil(this.bet) && <Bet bet={this.bet} />}
           </View>
-          <View style={this.styles.testRow}>
-            <Button onPress={this.onPressHit} title="Hit" />
-            <Button onPress={this.onPressHit} title="Reset" />
+          <Actions hand={this.playerHand} onClearBet={this.onClearBet} />
+          <View style={this.styles.section}>
+            <Chips
+              canBet={!this.playerHand.hasCards}
+              total={this.total}
+              onAddBet={this.onAddBet}
+            />
           </View>
+          {TESTING && (
+            <View style={this.styles.testRow}>
+              <Button onPress={this.onPressHit} title="Hit" />
+              <Button onPress={this.clearHands} title="Reset" />
+            </View>
+          )}
         </View>
       </View>
     )
@@ -92,6 +120,7 @@ export default class BlackJack extends Component {
       container: {
         flex: 1,
         backgroundColor: isDarkMode ? '#131313' : '#f0f0f0',
+        margin: 16,
       },
       section: {
         flex: 1,
@@ -109,6 +138,7 @@ export default class BlackJack extends Component {
 
 interface ActionsProps {
   hand: Hand
+  onClearBet: () => void
 }
 
 @observer
@@ -121,7 +151,7 @@ class Actions extends Component<ActionsProps> {
   renderPreBet() {
     return (
       <>
-        <Button onPress={_.noop} title="Clear" />
+        <Button onPress={this.props.onClearBet} title="Clear" />
         <View style={this.styles.separator} />
         <Button onPress={_.noop} title="Bet" />
       </>
@@ -176,6 +206,7 @@ class Actions extends Component<ActionsProps> {
 interface ChipsProps {
   canBet?: boolean
   total: number
+  onAddBet: (bet: number) => void
 }
 
 const CHIP_DENOMINATIONS = [5, 10, 25, 50, 100, 250, 500]
@@ -187,16 +218,27 @@ class Chips extends Component<ChipsProps> {
     makeObservable(this)
   }
 
+  canBet = (bet: number) => {
+    return this.props.total - bet >= 0
+  }
+
+  onAddBet = (bet: number) => () => this.props.onAddBet(bet)
+
   renderChips() {
     return (
       <View style={this.styles.chipsRow}>
         {CHIP_DENOMINATIONS.map((chip, index) => {
           const useSeparator = index < CHIP_DENOMINATIONS.length + 1
+          const disabled = !this.canBet(chip)
 
           // TODO: search how to add key to blank <></> React component
           return (
             <>
-              <Button onPress={_.noop} title={`${chip}`} />
+              <Button
+                title={`${chip}`}
+                onPress={this.onAddBet(chip)}
+                disabled={disabled}
+              />
               {useSeparator && <View style={this.styles.separator} />}
             </>
           )
@@ -241,6 +283,31 @@ class Chips extends Component<ChipsProps> {
         justifyContent: 'flex-end',
       },
       totalLabel: {
+        fontSize: 16,
+      },
+    })
+  }
+}
+
+interface BetProps {
+  bet: number
+}
+
+@observer
+class Bet extends Component<BetProps> {
+  constructor(props) {
+    super(props)
+    makeObservable(this)
+  }
+
+  render() {
+    return <Text style={this.styles.label}>bet: ${this.props.bet}</Text>
+  }
+
+  @computed
+  get styles() {
+    return StyleSheet.create({
+      label: {
         fontSize: 16,
       },
     })

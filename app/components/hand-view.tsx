@@ -25,7 +25,7 @@ export default class HandView extends Component<Props> {
 
   render() {
     return (
-      <View style={this.styles.container}>
+      <View>
         <Text style={this.styles.label}>{this.label}</Text>
         {!_.isEmpty(this.props.hand.cards) && (
           <View style={this.styles.cards}>
@@ -46,9 +46,6 @@ export default class HandView extends Component<Props> {
   @computed
   get styles() {
     return StyleSheet.create({
-      container: {
-        margin: 8,
-      },
       label: {
         fontSize: 16,
       },
