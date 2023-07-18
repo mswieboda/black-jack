@@ -14,7 +14,7 @@ import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 const INITIAL_TOTAL = 150
-const TESTING = true // false
+const TESTING = false
 
 @observer
 export default class BlackJack extends Component {
