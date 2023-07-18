@@ -107,26 +107,85 @@ export class Shoot {
   }
 }
 
-export const handValue = (cards: Card[]): number | [number, number] => {
-  let ace = null
-  let aceOption = null
-  let value = 0
-
-  for (const card of cards) {
-    if (_.isNil(ace) && card.rank === Rank.Ace) {
-      ace = card
-    }
-
-    if (card.rank <= 10) {
-      value += card.rank
-    } else {
-      value += FACE_VALUE
-    }
+export class Hand {
+  constructor(cards: Card[] = []) {
+    makeObservable(this)
+    this.cards = cards
   }
 
-  if (!_.isNil(ace) && value + ACE_MAX_VALUE <= TWENTY_ONE_VALUE) {
-    aceOption = value + ACE_MAX_VALUE - ace.rank
+  @observable
+  private readonly cards: Card[] = []
+
+  @computed
+  get value(): number | [number, number] {
+    let ace = null
+    let aceOption = null
+    let value = 0
+
+    for (const card of this.cards) {
+      if (_.isNil(ace) && card.rank === Rank.Ace) {
+        ace = card
+      }
+
+      if (card.rank <= 10) {
+        value += card.rank
+      } else {
+        value += FACE_VALUE
+      }
+    }
+
+    if (!_.isNil(ace)) {
+      const option = value - ace.rank + ACE_MAX_VALUE
+
+      if (option === TWENTY_ONE_VALUE) {
+        return TWENTY_ONE_VALUE
+      } else if (option < TWENTY_ONE_VALUE - ACE_MAX_VALUE) {
+        aceOption = option
+      }
+    }
+
+    return _.isNil(aceOption) ? value : [value, aceOption]
   }
 
-  return _.isNil(aceOption) ? value : [value, aceOption]
+  @computed
+  get display(): string {
+    if (this.value === 0) {
+      return ''
+    } else if (this.value === TWENTY_ONE_VALUE && this.cards.length === 2) {
+      return 'blackjack!'
+    }
+
+    return _.isArrayLikeObject(this.value)
+      ? this.value.join('/')
+      : this.value.toString()
+  }
+
+  @action.bound
+  clear() {
+    this.cards.length = 0
+  }
+
+  @action.bound
+  add(cards: Card[]) {
+    this.cards.splice(this.cards.length, 0, ...cards)
+  }
+
+  @computed
+  get canSplit() {
+    if (this.cards.length !== 2) {
+      return false
+    }
+
+    return this.cards[0].rank === this.cards[1].rank
+  }
+
+  @computed
+  get canDoubleDown() {
+    return this.cards.length === 2 && this.value !== TWENTY_ONE_VALUE
+  }
+
+  @computed
+  get hasCards() {
+    return this.cards.length > 0
+  }
 }

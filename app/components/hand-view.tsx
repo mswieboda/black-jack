@@ -3,39 +3,33 @@ import { computed, makeObservable } from 'mobx'
 import { observer } from 'mobx-react'
 import { StyleSheet, Text, View } from 'react-native'
 import _ from 'lodash'
-import { Card, handValue } from 'lib/cards'
+import { Hand } from 'lib/cards'
 import CardView from './card-view'
 
 interface Props {
   label: string
-  cards: Card[]
+  hand: Hand
 }
 
 @observer
-export default class Hand extends Component<Props> {
+export default class HandView extends Component<Props> {
   constructor(props) {
     super(props)
     makeObservable(this)
   }
 
   @computed
-  get handValueDisplay() {
-    const value = handValue(this.props.cards)
-    return _.isArrayLikeObject(value) ? value.join('/') : value
-  }
-
-  @computed
   get label() {
-    return `${this.props.label}: ${this.handValueDisplay}`
+    return `${this.props.label}: ${this.props.hand.display}`
   }
 
   render() {
     return (
       <View style={this.styles.container}>
         <Text style={this.styles.label}>{this.label}</Text>
-        {!_.isEmpty(this.props.cards) && (
+        {!_.isEmpty(this.props.hand.cards) && (
           <View style={this.styles.cards}>
-            {this.props.cards.map((card, index) => (
+            {this.props.hand.cards.map((card, index) => (
               <CardView
                 card={card}
                 key={card.key}
@@ -53,7 +47,7 @@ export default class Hand extends Component<Props> {
   get styles() {
     return StyleSheet.create({
       container: {
-        flex: 1,
+        margin: 8,
       },
       label: {
         fontSize: 16,

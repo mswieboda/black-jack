@@ -3,8 +3,8 @@ import { action, computed, makeObservable, observable } from 'mobx'
 import { observer } from 'mobx-react'
 import { Button, InteractionManager, StyleSheet, View } from 'react-native'
 import _ from 'lodash'
-import { Card, Shoot } from 'lib/cards'
-import Hand from './hand'
+import { Hand, Shoot } from 'lib/cards'
+import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 
@@ -22,10 +22,10 @@ export default class BlackJack extends Component {
   discardShoot: Shoot = new Shoot()
 
   @observable
-  playerHand: Card[] = []
+  playerHand: Hand = new Hand()
 
   @observable
-  dealerHand: Card[] = []
+  dealerHand: Hand = new Hand()
 
   componentDidMount() {
     InteractionManager.runAfterInteractions(this.afterInteractionSetup)
@@ -45,45 +45,32 @@ export default class BlackJack extends Component {
   @action.bound
   clearHands = () => {
     this.hands.forEach(hand => {
-      this.discardShoot.add(this.playerHand)
-      hand.length = 0
+      this.discardShoot.add(hand.cards)
+      hand.clear()
     })
-  }
-
-  @action.bound
-  deal = () => {
-    this.clearHands()
-
-    _.times(2, () => {
-      this.playerHand = this.playerHand.concat(this.shoot.remove())
-      this.dealerHand = this.dealerHand.concat(this.shoot.remove())
-    })
-  }
-
-  @action.bound
-  onPressDeal = () => {
-    this.deal()
   }
 
   @action.bound
   onPressHit = () => {
-    this.playerHand = this.playerHand.concat(this.shoot.remove())
-    this.dealerHand = this.dealerHand.concat(this.shoot.remove())
+    this.playerHand.add(this.shoot.remove())
+    this.dealerHand.add(this.shoot.remove())
   }
 
   render() {
     return (
       <View style={this.styles.container}>
-        <Hand label="dealer" cards={this.dealerHand} />
-        <View style={this.styles.section} />
-        <Hand label="player" cards={this.playerHand} />
-        <View style={this.styles.section}>{/* Bet */}</View>
-        <View style={this.styles.actions}>
-          <Button onPress={this.onPressDeal} title="Deal" />
-          <View style={this.styles.separator} />
+        <View style={this.styles.section}>
+          <HandView label="dealer" hand={this.dealerHand} />
+        </View>
+        <View style={this.styles.bottomView}>
+          <View style={this.styles.section}>
+            <HandView label="player" hand={this.playerHand} />
+          </View>
+          <View style={this.styles.section}>{/* Bet */}</View>
+          <Actions hand={this.playerHand} />
+          <View style={this.styles.section}>{/* Chips */}</View>
           <Button onPress={this.onPressHit} title="Hit" />
         </View>
-        <View style={this.styles.section}>{/* Chips */}</View>
       </View>
     )
   }
@@ -95,18 +82,78 @@ export default class BlackJack extends Component {
         flex: 1,
         backgroundColor: isDarkMode ? '#131313' : '#f0f0f0',
       },
-      actions: {
+      section: {
+        flex: 1,
+      },
+      bottomView: {
+        flex: 2,
+        justifyContent: 'flex-end',
+      },
+    })
+  }
+}
+
+interface ActionsProps {
+  hand: Hand
+}
+
+@observer
+class Actions extends Component<ActionsProps> {
+  constructor(props) {
+    super(props)
+    makeObservable(this)
+  }
+
+  renderPreBet() {
+    return (
+      <>
+        <Button onPress={_.noop} title="Clear" />
+        <View style={this.styles.separator} />
+        <Button onPress={_.noop} title="Bet" />
+      </>
+    )
+  }
+
+  renderHand() {
+    return (
+      <>
+        <Button onPress={_.noop} title="Stay" />
+        <View style={this.styles.separator} />
+        {this.props.hand.canDoubleDown && (
+          <>
+            <Button onPress={_.noop} title="Double Down" />
+            <View style={this.styles.separator} />
+          </>
+        )}
+        {this.props.hand.canSplit && (
+          <>
+            <Button onPress={_.noop} title="Split" />
+            <View style={this.styles.separator} />
+          </>
+        )}
+        <Button onPress={this.onPressHit} title="Hit" />
+      </>
+    )
+  }
+
+  render() {
+    return (
+      <View style={this.styles.container}>
+        {this.props.hand.hasCards ? this.renderHand() : this.renderPreBet()}
+      </View>
+    )
+  }
+
+  @computed
+  get styles() {
+    return StyleSheet.create({
+      container: {
         flexDirection: 'row',
         justifyContent: 'center',
         marginTop: 32,
       },
       separator: {
         width: 16,
-      },
-      section: {
-        flex: 1,
-        alignItems: 'center',
-        marginTop: 32,
       },
     })
   }
