@@ -97,6 +97,7 @@ export default class BlackJack extends Component {
 
   @action.bound
   clearHands = () => {
+    this.turnIndex = 0
     this.hands.forEach(hand => {
       this.discardShoot.add(hand.cards)
       hand.clear()
