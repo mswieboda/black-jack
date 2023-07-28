@@ -4,6 +4,7 @@ import _ from 'lodash'
 const ACE_MAX_VALUE = 11
 const FACE_VALUE = 10
 const TWENTY_ONE_VALUE = 21
+const BLACKJACK_PAYOUT_RATIO = 1.5 // (3/2 payout)
 const Rank = {
   Ace: 1,
   Two: 2,
@@ -117,7 +118,7 @@ export class Hand {
   private readonly cards: Card[] = []
 
   @computed
-  get value(): number | [number, number] {
+  get valueOptions(): number | [number, number] {
     let ace = null
     let aceOption = null
     let value = 0
@@ -148,31 +149,33 @@ export class Hand {
   }
 
   @computed
-  get maxValue(): number {
-    return _.isArrayLikeObject(this.value) ? _.max(this.value) : this.value
+  get value(): number {
+    return _.isArrayLikeObject(this.valueOptions)
+      ? _.max(this.valueOptions)
+      : this.valueOptions
   }
 
   @computed
   get isTwentyOne(): boolean {
-    return this.maxValue === TWENTY_ONE_VALUE
+    return this.value === TWENTY_ONE_VALUE
   }
 
   @computed
   get isBlackJack(): boolean {
-    return this.isTwentyOne && this.cards.length === 2
+    return this.cards.length === 2 && this.isTwentyOne
   }
 
   @computed
   get display(): string {
-    if (this.value === 0) {
+    if (this.valueOptions === 0) {
       return ''
     } else if (this.isBlackJack) {
       return 'blackjack!'
     }
 
-    return _.isArrayLikeObject(this.value)
-      ? this.value.join('/')
-      : this.value.toString()
+    return _.isArrayLikeObject(this.valueOptions)
+      ? this.valueOptions.join('/')
+      : this.valueOptions.toString()
   }
 
   @action.bound
@@ -202,9 +205,7 @@ export class Hand {
 
   @computed
   get canDoubleDown() {
-    return (
-      this.isDealt && this.cards.length === 2 && this.value !== TWENTY_ONE_VALUE
-    )
+    return this.isDealt && this.cards.length === 2 && !this.isBlackJack
   }
 
   @computed
@@ -219,6 +220,45 @@ export class Hand {
 
   @computed
   get isBust() {
-    return !_.isArrayLikeObject(this.value) && this.value > TWENTY_ONE_VALUE
+    return this.value > TWENTY_ONE_VALUE
   }
+}
+
+// TODO: can use with settings to set blackjack payout, currently at 3/2 (1.5)
+export const calculatePayout = (
+  bet: number,
+  playerHand: Hand,
+  dealerHand: Hand,
+  blackjack_payout_ratio: number = BLACKJACK_PAYOUT_RATIO,
+) => {
+  if (playerHand.isBust) {
+    return -bet
+  }
+
+  if (dealerHand.isBust) {
+    return bet
+  }
+
+  if (playerHand.value < dealerHand.value) {
+    return -bet
+  }
+
+  if (playerHand.value > dealerHand.value) {
+    return bet * (playerHand.isBlackJack ? blackjack_payout_ratio : 1)
+  }
+
+  if (playerHand.isBlackJack && !dealerHand.isBlackJack) {
+    return bet * (playerHand.isBlackJack ? blackjack_payout_ratio : 1)
+  }
+
+  if (dealerHand.isBlackJack) {
+    return -bet
+  }
+
+  return 0
+}
+
+export const dealerShouldHit = (playerHand: Hand, dealerHand: Hand) => {
+  // TODO: potentially add option to stay/hit on soft 17
+  return !playerHand.isBust && !dealerHand.isBust && dealerHand.value < 17
 }

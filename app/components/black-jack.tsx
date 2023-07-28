@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native'
 import _ from 'lodash'
-import { Hand, Shoot } from 'lib/cards'
+import { calculatePayout, dealerShouldHit, Hand, Shoot } from 'lib/cards'
 import { showError, showInfo, showWarning } from 'lib/message'
 import HandView from './hand-view'
 
@@ -162,8 +162,7 @@ export default class BlackJack extends Component {
   }
 
   dealerPlayAction = () => {
-    // TODO: potentially add option to stay on soft 17
-    if (!this.playerHand.isBust && !this.hand.isBust && this.hand.maxValue < 17) {
+    if (dealerShouldHit(this.playerHand, this.dealerHand)) {
       this.delayedAction(() => {
         this.hit()
         this.dealerPlayAction()
@@ -174,29 +173,26 @@ export default class BlackJack extends Component {
   }
 
   @action.bound
-  doLosePayout = () => {
-    showError(`lost -${this.bet}`)
+  doLosePayout = payout => {
+    showError(`lost -${payout}`)
     this.bet = null
   }
 
   @action.bound
-  doWinPayout = () => {
-    // TODO: add setting to set blackjack payout, currently at 3/2 (1.5)
-    const payout = this.bet * (this.playerHand.isBlackJack ? 1.5 : 1)
+  doWinPayout = payout => {
     showInfo(`won +${payout}`)
     this.total += payout
   }
 
   @action.bound
   doPayouts = () => {
-    if (this.playerHand.isBust) {
-      this.doLosePayout()
-    } else if (this.dealerHand.isBust) {
-      this.doWinPayout()
-    } else if (this.playerHand.maxValue < this.dealerHand.maxValue) {
-      this.doLosePayout()
-    } else if (this.playerHand.maxValue > this.dealerHand.maxValue) {
-      this.doWinPayout()
+    // TODO: can pass a 4th argument blackjack_payout_ratio, if a setting, currently defaults to 1.5 (3/2 payout)
+    const payout = calculatePayout(this.bet, this.playerHand, this.dealerHand)
+
+    if (payout < 0) {
+      this.doLosePayout(payout)
+    } else if (payout > 0) {
+      this.doWinPayout(payout)
     } else {
       showWarning('push')
     }
@@ -216,7 +212,16 @@ export default class BlackJack extends Component {
 
   @action.bound
   onPressDoubleDown = () => {
-    showWarning('double down not yet implemented')
+    this.turnIndex = 0
+
+    const origBet = this.bet
+    this.total -= origBet
+    this.bet += origBet
+
+    this.delayedAction(() => {
+      this.hit()
+      this.delayedAction(this.startNextTurn)
+    })
   }
 
   @action.bound
@@ -252,6 +257,7 @@ export default class BlackJack extends Component {
             {!_.isNil(this.bet) && <Bet bet={this.bet} />}
           </View>
           <Actions
+            total={this.total}
             bet={this.bet}
             hand={this.playerHand}
             isLocked={this.isDelayedActionPerforming || this.isDealerTurn}
@@ -301,7 +307,8 @@ export default class BlackJack extends Component {
 }
 
 interface ActionsProps {
-  bet?: number
+  total: number
+  bet: number
   hand: Hand
   isLocked?: boolean
   onClearBet: () => void
@@ -322,6 +329,11 @@ class Actions extends Component<ActionsProps> {
   @computed
   get bettingDisabled() {
     return this.props.isLocked || _.isNil(this.props.bet)
+  }
+
+  @computed
+  get canDoubleBet() {
+    return this.props.total - this.props.bet >= 0
   }
 
   renderPreBet() {
@@ -359,14 +371,22 @@ class Actions extends Component<ActionsProps> {
           <Button
             title="Split"
             onPress={this.props.onPressSplit}
-            disabled={this.props.isLocked || !this.props.hand.canSplit}
+            disabled={
+              this.props.isLocked ||
+              !this.canDoubleBet ||
+              !this.props.hand.canSplit
+            }
           />
         </View>
         <View style={this.styles.button}>
           <Button
             title="Double"
             onPress={this.props.onPressDoubleDown}
-            disabled={this.props.isLocked || !this.props.hand.canDoubleDown}
+            disabled={
+              this.props.isLocked ||
+              !this.canDoubleBet ||
+              !this.props.hand.canDoubleDown
+            }
           />
         </View>
         <View style={[this.styles.button, this.styles.buttonLast]}>
@@ -418,7 +438,7 @@ interface ChipsProps {
   onAddBet: (bet: number) => void
 }
 
-const CHIP_DENOMINATIONS = [5, 10, 25, 50, 100, 500]
+const CHIP_DENOMINATIONS = [5, 25, 100, 500]
 
 @observer
 class Chips extends Component<ChipsProps> {
