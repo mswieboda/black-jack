@@ -163,7 +163,7 @@ export default class BlackJack extends Component {
 
   dealerPlayAction = () => {
     // TODO: potentially add option to stay on soft 17
-    if (!this.hand.isBust && this.hand.maxValue < 17) {
+    if (!this.playerHand.isBust && !this.hand.isBust && this.hand.maxValue < 17) {
       this.delayedAction(() => {
         this.hit()
         this.dealerPlayAction()
