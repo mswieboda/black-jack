@@ -209,7 +209,7 @@ export class Hand {
 
   @computed
   get canHit() {
-    return this.isDealt && !this.isBust
+    return !this.isBust && this.cards.length >= 2 && !this.isTwentyOne
   }
 
   @computed
