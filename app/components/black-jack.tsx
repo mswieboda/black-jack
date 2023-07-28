@@ -18,7 +18,7 @@ const INITIAL_TOTAL = 150
 const ACTION_DELAY = 300
 const TESTING = false
 
-const delayedAction = (a: () => void) => setTimeout(a, ACTION_DELAY)
+const delayedAction = (act: () => void) => setTimeout(act, ACTION_DELAY)
 
 @observer
 export default class BlackJack extends Component {
@@ -48,6 +48,9 @@ export default class BlackJack extends Component {
   @observable
   turnIndex = 0
 
+  @observable
+  isDelayedActionPerforming = false
+
   componentDidMount() {
     InteractionManager.runAfterInteractions(this.afterInteractionSetup)
   }
@@ -61,6 +64,20 @@ export default class BlackJack extends Component {
   @computed
   get hands() {
     return [this.playerHand, this.dealerHand]
+  }
+
+  @action.bound
+  delayedAction = (act: () => void) => {
+    this.updateIsDelayedActionPerforming(true)
+    delayedAction(() => {
+      act()
+      this.updateIsDelayedActionPerforming(false)
+    })
+  }
+
+  @action.bound
+  updateIsDelayedActionPerforming = (val: boolean) => {
+    this.isDelayedActionPerforming = val
   }
 
   @action.bound
@@ -103,7 +120,7 @@ export default class BlackJack extends Component {
   @action.bound
   startDeal = () => {
     this.turnIndex = 0
-    delayedAction(this.dealAction(0))
+    this.delayedAction(this.dealAction(0))
   }
 
   @action.bound
@@ -121,7 +138,9 @@ export default class BlackJack extends Component {
     const hand = this.hands[this.turnIndex]
 
     if (!hand.isDealt) {
-      delayedAction(this.dealAction(dealIndex + 1))
+      InteractionManager.runAfterInteractions(() =>
+        this.delayedAction(this.dealAction(dealIndex + 1)),
+      )
     }
   }
 
@@ -143,12 +162,18 @@ export default class BlackJack extends Component {
   @action.bound
   onPressHit = () => {
     this.turnIndex = 0
-    delayedAction(this.hit)
+    this.delayedAction(this.hit)
   }
 
   render() {
     return (
       <View style={this.styles.container}>
+        {TESTING && (
+          <View style={this.styles.testRow}>
+            <Button onPress={this.onPressTest} title="Test" />
+            <Button onPress={this.clearHands} title="Reset" />
+          </View>
+        )}
         <HandView
           label="dealer"
           hand={this.dealerHand}
@@ -163,6 +188,7 @@ export default class BlackJack extends Component {
           <Actions
             bet={this.bet}
             hand={this.playerHand}
+            isLocked={this.isDelayedActionPerforming}
             onClearBet={this.onClearBet}
             onConfirmBet={this.startDeal}
             onPressStay={this.onPressStay}
@@ -172,17 +198,12 @@ export default class BlackJack extends Component {
           />
           <View style={this.styles.section}>
             <Chips
+              isLocked={this.isDelayedActionPerforming}
               canBet={!this.playerHand.hasCards}
               total={this.total}
               onAddBet={this.onAddBet}
             />
           </View>
-          {TESTING && (
-            <View style={this.styles.testRow}>
-              <Button onPress={this.onPressTest} title="Test" />
-              <Button onPress={this.clearHands} title="Reset" />
-            </View>
-          )}
         </View>
       </View>
     )
@@ -204,6 +225,8 @@ export default class BlackJack extends Component {
         justifyContent: 'flex-end',
       },
       testRow: {
+        justifyContent: 'space-between',
+        alignItems: 'center',
         flexDirection: 'row',
       },
     })
@@ -213,6 +236,7 @@ export default class BlackJack extends Component {
 interface ActionsProps {
   bet?: number
   hand: Hand
+  isLocked?: boolean
   onClearBet: () => void
   onConfirmBet: () => void
   onPressStay: () => void
@@ -230,7 +254,7 @@ class Actions extends Component<ActionsProps> {
 
   @computed
   get bettingDisabled() {
-    return _.isNil(this.props.bet)
+    return this.props.isLocked || _.isNil(this.props.bet)
   }
 
   renderPreBet() {
@@ -258,27 +282,31 @@ class Actions extends Component<ActionsProps> {
     return (
       <>
         <View style={[this.styles.button, this.styles.buttonFirst]}>
-          <Button title="Stay" onPress={this.props.onPressStay} />
+          <Button
+            title="Stay"
+            onPress={this.props.onPressStay}
+            disabled={this.props.isLocked || !this.props.hand.canStay}
+          />
         </View>
         <View style={this.styles.button}>
           <Button
             title="Split"
             onPress={this.props.onPressSplit}
-            disabled={!this.props.hand.canSplit}
+            disabled={this.props.isLocked || !this.props.hand.canSplit}
           />
         </View>
         <View style={this.styles.button}>
           <Button
             title="Double"
             onPress={this.props.onPressDoubleDown}
-            disabled={!this.props.hand.canDoubleDown}
+            disabled={this.props.isLocked || !this.props.hand.canDoubleDown}
           />
         </View>
         <View style={[this.styles.button, this.styles.buttonLast]}>
           <Button
             title="Hit"
             onPress={this.props.onPressHit}
-            disabled={!this.props.hand.canHit}
+            disabled={this.props.isLocked || !this.props.hand.canHit}
           />
         </View>
       </>
@@ -317,6 +345,7 @@ class Actions extends Component<ActionsProps> {
 }
 
 interface ChipsProps {
+  isLocked?: boolean
   canBet?: boolean
   total: number
   onAddBet: (bet: number) => void
@@ -346,7 +375,7 @@ class Chips extends Component<ChipsProps> {
           const PADDING = 6
           const paddingLeft = isFirst ? 0 : PADDING
           const paddingRight = isLast ? 0 : PADDING
-          const disabled = !this.canBet(chip)
+          const disabled = this.props.isLocked || !this.canBet(chip)
 
           return (
             <View

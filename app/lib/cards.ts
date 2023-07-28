@@ -176,22 +176,25 @@ export class Hand {
   }
 
   @computed
-  get canHit() {
-    return !this.isBust
+  get canStay() {
+    return this.isDealt
   }
 
   @computed
   get canSplit() {
-    if (!this.isDealt) {
-      return false
-    }
-
-    return this.cards[0].rank === this.cards[1].rank
+    return this.isDealt && this.cards[0].rank === this.cards[1].rank
   }
 
   @computed
   get canDoubleDown() {
-    return this.cards.length === 2 && this.value !== TWENTY_ONE_VALUE
+    return (
+      this.isDealt && this.cards.length === 2 && this.value !== TWENTY_ONE_VALUE
+    )
+  }
+
+  @computed
+  get canHit() {
+    return this.isDealt && !this.isBust
   }
 
   @computed
