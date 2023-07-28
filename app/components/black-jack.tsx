@@ -181,9 +181,10 @@ export default class BlackJack extends Component {
 
   @action.bound
   doWinPayout = () => {
-    showInfo(`won +${this.bet}`)
-    this.total += this.bet
-    this.bet = null
+    // TODO: add setting to set blackjack payout, currently at 3/2 (1.5)
+    const payout = this.bet * (this.playerHand.isBlackJack ? 1.5 : 1)
+    showInfo(`won +${payout}`)
+    this.total += payout
   }
 
   @action.bound
