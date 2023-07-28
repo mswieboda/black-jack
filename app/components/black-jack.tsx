@@ -236,17 +236,20 @@ class Actions extends Component<ActionsProps> {
   renderPreBet() {
     return (
       <>
-        <Button
-          onPress={this.props.onClearBet}
-          title="Clear"
-          disabled={this.bettingDisabled}
-        />
-        <View style={this.styles.separator} />
-        <Button
-          onPress={this.props.onConfirmBet}
-          title="Bet"
-          disabled={this.bettingDisabled}
-        />
+        <View style={[this.styles.button, this.styles.buttonFirst]}>
+          <Button
+            onPress={this.props.onClearBet}
+            title="Clear"
+            disabled={this.bettingDisabled}
+          />
+        </View>
+        <View style={[this.styles.button, this.styles.buttonLast]}>
+          <Button
+            onPress={this.props.onConfirmBet}
+            title="Bet"
+            disabled={this.bettingDisabled}
+          />
+        </View>
       </>
     )
   }
@@ -254,25 +257,30 @@ class Actions extends Component<ActionsProps> {
   renderHand() {
     return (
       <>
-        <Button title="Stay" onPress={this.props.onPressStay} />
-        <View style={this.styles.separator} />
-        <Button
-          title="Split"
-          onPress={this.props.onPressSplit}
-          disabled={!this.props.hand.canSplit}
-        />
-        <View style={this.styles.separator} />
-        <Button
-          title="Double Down"
-          onPress={this.props.onPressDoubleDown}
-          disabled={!this.props.hand.canDoubleDown}
-        />
-        <View style={this.styles.separator} />
-        <Button
-          title="Hit"
-          onPress={this.props.onPressHit}
-          disabled={!this.props.hand.canHit}
-        />
+        <View style={[this.styles.button, this.styles.buttonFirst]}>
+          <Button title="Stay" onPress={this.props.onPressStay} />
+        </View>
+        <View style={this.styles.button}>
+          <Button
+            title="Split"
+            onPress={this.props.onPressSplit}
+            disabled={!this.props.hand.canSplit}
+          />
+        </View>
+        <View style={this.styles.button}>
+          <Button
+            title="Double"
+            onPress={this.props.onPressDoubleDown}
+            disabled={!this.props.hand.canDoubleDown}
+          />
+        </View>
+        <View style={[this.styles.button, this.styles.buttonLast]}>
+          <Button
+            title="Hit"
+            onPress={this.props.onPressHit}
+            disabled={!this.props.hand.canHit}
+          />
+        </View>
       </>
     )
   }
@@ -291,10 +299,18 @@ class Actions extends Component<ActionsProps> {
       container: {
         flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
         marginTop: 32,
       },
-      separator: {
-        width: 16,
+      button: {
+        flex: 1,
+        paddingHorizontal: 8,
+      },
+      buttonFirst: {
+        paddingLeft: 0,
+      },
+      buttonLast: {
+        paddingRight: 0,
       },
     })
   }
@@ -306,7 +322,7 @@ interface ChipsProps {
   onAddBet: (bet: number) => void
 }
 
-const CHIP_DENOMINATIONS = [5, 10, 25, 50, 100, 250, 500]
+const CHIP_DENOMINATIONS = [5, 10, 25, 50, 100, 500]
 
 @observer
 class Chips extends Component<ChipsProps> {
@@ -325,19 +341,23 @@ class Chips extends Component<ChipsProps> {
     return (
       <View style={this.styles.chipsRow}>
         {CHIP_DENOMINATIONS.map((chip, index) => {
-          const useSeparator = index < CHIP_DENOMINATIONS.length - 1
+          const isLast = index === CHIP_DENOMINATIONS.length - 1
+          const isFirst = index === 0
+          const PADDING = 6
+          const paddingLeft = isFirst ? 0 : PADDING
+          const paddingRight = isLast ? 0 : PADDING
           const disabled = !this.canBet(chip)
 
-          // TODO: search how to add key to blank <></> React component
           return (
-            <>
+            <View
+              style={[this.styles.container, { paddingLeft, paddingRight }]}
+              key={`${chip}`}>
               <Button
                 title={`${chip}`}
                 onPress={this.onAddBet(chip)}
                 disabled={disabled}
               />
-              {useSeparator && <View style={this.styles.separator} />}
-            </>
+            </View>
           )
         })}
       </View>
@@ -371,9 +391,6 @@ class Chips extends Component<ChipsProps> {
         flexDirection: 'row',
         justifyContent: 'center',
         marginTop: 32,
-      },
-      separator: {
-        width: 8,
       },
       total: {
         flex: 1,
