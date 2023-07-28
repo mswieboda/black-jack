@@ -10,15 +10,18 @@ import {
 } from 'react-native'
 import _ from 'lodash'
 import { Hand, Shoot } from 'lib/cards'
-import { showError, showWarning } from 'lib/message'
+import { showError, showInfo, showWarning } from 'lib/message'
 import HandView from './hand-view'
 
 const isDarkMode = true // Appearance.getColorScheme() === 'dark'
 const INITIAL_TOTAL = 150
 const ACTION_DELAY = 300
+const BEFORE_PAYOUTS_DURATION = 1500
+const AFTER_PAYOUTS_DURATION = 3500
 const TESTING = false
 
-const delayedAction = (act: () => void) => setTimeout(act, ACTION_DELAY)
+const delayedAction = (act: () => void, duration: number = ACTION_DELAY) =>
+  setTimeout(act, duration)
 
 @observer
 export default class BlackJack extends Component {
@@ -66,12 +69,24 @@ export default class BlackJack extends Component {
     return [this.playerHand, this.dealerHand]
   }
 
+  @computed
+  get hand() {
+    return this.hands[this.turnIndex]
+  }
+
+  @computed
+  get isDealerTurn() {
+    return this.hand === this.dealerHand
+  }
+
   @action.bound
-  delayedAction = (act: () => void) => {
+  delayedAction = (act: () => void, duration: number = ACTION_DELAY) => {
     this.updateIsDelayedActionPerforming(true)
-    delayedAction(() => {
-      act()
-      this.updateIsDelayedActionPerforming(false)
+    InteractionManager.runAfterInteractions(() => {
+      delayedAction(() => {
+        act()
+        this.updateIsDelayedActionPerforming(false)
+      }, duration)
     })
   }
 
@@ -90,13 +105,7 @@ export default class BlackJack extends Component {
 
   @action.bound
   hit = () => {
-    const hand = this.hands[this.turnIndex]
-
-    hand.add(this.shoot.remove())
-
-    if (hand.isBust) {
-      showError(this.delaerHand === hand ? 'dealer ' : '' + 'bust!')
-    }
+    this.hand.add(this.shoot.remove())
   }
 
   @action.bound
@@ -135,18 +144,67 @@ export default class BlackJack extends Component {
     this.hit()
     this.nextTurnIndex()
 
-    const hand = this.hands[this.turnIndex]
-
-    if (!hand.isDealt) {
-      InteractionManager.runAfterInteractions(() =>
-        this.delayedAction(this.dealAction(dealIndex + 1)),
-      )
+    if (!this.hand.isDealt) {
+      this.delayedAction(this.dealAction(dealIndex + 1))
+    } else if (this.hand === this.playerHand && this.hand.isBlackJack) {
+      this.startNextTurn()
     }
   }
 
   @action.bound
+  startNextTurn = () => {
+    this.nextTurnIndex()
+
+    if (this.isDealerTurn) {
+      this.dealerPlayAction()
+    }
+  }
+
+  dealerPlayAction = () => {
+    // TODO: potentially add option to stay on soft 17
+    if (!this.hand.isBust && this.hand.maxValue < 17) {
+      this.delayedAction(() => {
+        this.hit()
+        this.dealerPlayAction()
+      })
+    } else {
+      this.delayedAction(this.doPayouts, BEFORE_PAYOUTS_DURATION)
+    }
+  }
+
+  @action.bound
+  doLosePayout = () => {
+    showError(`lost -${this.bet}`)
+    this.bet = null
+  }
+
+  @action.bound
+  doWinPayout = () => {
+    showInfo(`won +${this.bet}`)
+    this.total += this.bet
+    this.bet = null
+  }
+
+  @action.bound
+  doPayouts = () => {
+    if (this.playerHand.isBust) {
+      this.doLosePayout()
+    } else if (this.dealerHand.isBust) {
+      this.doWinPayout()
+    } else if (this.playerHand.maxValue < this.dealerHand.maxValue) {
+      this.doLosePayout()
+    } else if (this.playerHand.maxValue > this.dealerHand.maxValue) {
+      this.doWinPayout()
+    } else {
+      showWarning('push')
+    }
+
+    this.delayedAction(this.clearHands, AFTER_PAYOUTS_DURATION)
+  }
+
+  @action.bound
   onPressStay = () => {
-    showWarning('stay not yet implemented')
+    this.startNextTurn()
   }
 
   @action.bound
@@ -162,7 +220,13 @@ export default class BlackJack extends Component {
   @action.bound
   onPressHit = () => {
     this.turnIndex = 0
-    this.delayedAction(this.hit)
+    this.delayedAction(() => {
+      this.hit()
+
+      if (this.hand.isBust || this.hand.isTwentyOne) {
+        this.delayedAction(this.startNextTurn)
+      }
+    })
   }
 
   render() {
@@ -178,7 +242,7 @@ export default class BlackJack extends Component {
           label="dealer"
           hand={this.dealerHand}
           isDealer={true}
-          isDealerTurn={false} // TODO: impl
+          isDealerTurn={this.isDealerTurn}
         />
         <View style={this.styles.bottomView}>
           <HandView label="player" hand={this.playerHand} />
@@ -188,7 +252,7 @@ export default class BlackJack extends Component {
           <Actions
             bet={this.bet}
             hand={this.playerHand}
-            isLocked={this.isDelayedActionPerforming}
+            isLocked={this.isDelayedActionPerforming || this.isDealerTurn}
             onClearBet={this.onClearBet}
             onConfirmBet={this.startDeal}
             onPressStay={this.onPressStay}
@@ -216,6 +280,7 @@ export default class BlackJack extends Component {
         flex: 1,
         backgroundColor: isDarkMode ? '#131313' : '#f0f0f0',
         margin: 16,
+        marginTop: 64,
       },
       section: {
         flex: 1,

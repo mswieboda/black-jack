@@ -148,10 +148,25 @@ export class Hand {
   }
 
   @computed
+  get maxValue(): number {
+    return _.isArrayLikeObject(this.value) ? _.max(this.value) : this.value
+  }
+
+  @computed
+  get isTwentyOne(): boolean {
+    return this.maxValue === TWENTY_ONE_VALUE
+  }
+
+  @computed
+  get isBlackJack(): boolean {
+    return this.isTwentyOne && this.cards.length === 2
+  }
+
+  @computed
   get display(): string {
     if (this.value === 0) {
       return ''
-    } else if (this.value === TWENTY_ONE_VALUE && this.cards.length === 2) {
+    } else if (this.isBlackJack) {
       return 'blackjack!'
     }
 
@@ -177,7 +192,7 @@ export class Hand {
 
   @computed
   get canStay() {
-    return this.isDealt
+    return !this.isBust && this.cards.length >= 2
   }
 
   @computed

@@ -8,7 +8,7 @@ export const show = (any: any) => {
 }
 
 export const showInfo = (message: string) => {
-  showM({
+  show({
     message,
     type: 'info',
     backgroundColor: '#3399ff',
